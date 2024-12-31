@@ -28,10 +28,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { PropertyType } from "@/types/property"
 import { createProperty } from "@/lib/actions/properties"
 
+const propertyTypeEnum = z.enum(['apartment', 'house', 'studio', 'villa', 'office', 'land'])
+
 const formSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   description: z.string().min(1, "La description est requise"),
-  type: z.enum(["apartment", "house", "studio", "villa", "office", "land"] as const),
+  type: propertyTypeEnum,
   city: z.string().min(1, "La ville est requise"),
   district: z.string().optional(),
   price: z.number().min(0, "Le prix doit être positif"),
@@ -50,7 +52,7 @@ export function PostPropertyForm() {
     defaultValues: {
       title: "",
       description: "",
-      type: "apartment",
+      type: "apartment" as PropertyType,
       city: "",
       district: "",
       price: 0,
@@ -63,11 +65,28 @@ export function PostPropertyForm() {
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
     try {
-      const property = await createProperty({
-        ...values,
-        owner_id: 'user_id', // À remplacer par l'ID de l'utilisateur connecté
-        status: 'published' as const,
-      })
+      const propertyData = {
+        title: values.title,
+        description: values.description,
+        type: values.type as PropertyType,
+        price: values.price,
+        surface: values.surface,
+        rooms: values.bedrooms || 0,
+        bedrooms: values.bedrooms || 0,
+        bathrooms: values.bathrooms || 0,
+        address: values.district || '',
+        city: values.city,
+        postalCode: '',
+        images: [],
+        features: values.amenities,
+        userId: 'user_id',
+        owner_id: 'user_id',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'published' as const
+      }
+      
+      const property = await createProperty(propertyData)
       console.log(property)
     } catch (error) {
       console.error(error)

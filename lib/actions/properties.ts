@@ -1,23 +1,11 @@
 import { supabase } from "@/lib/supabase"
 import { Property, PropertyType } from "@/types/property"
 
-interface CreatePropertyData {
+type CreatePropertyInput = Omit<Property, 'id'> & {
   owner_id: string
-  title: string
-  description: string
-  type: PropertyType
-  city: string
-  district?: string
-  price: number
-  surface: number
-  bedrooms?: number
-  bathrooms?: number
-  images?: any
-  amenities?: string[]
-  status?: 'draft' | 'published' | 'archived'
 }
 
-export async function createProperty(data: CreatePropertyData): Promise<Property> {
+export async function createProperty(data: CreatePropertyInput): Promise<Property> {
   const { data: property, error } = await supabase
     .from('properties')
     .insert([
@@ -39,7 +27,7 @@ export async function createProperty(data: CreatePropertyData): Promise<Property
 
 export async function updateProperty(
   id: string,
-  data: Partial<CreatePropertyData>
+  data: Partial<CreatePropertyInput>
 ): Promise<Property> {
   const { data: property, error } = await supabase
     .from('properties')
