@@ -1,14 +1,10 @@
 import { supabase } from "@/lib/supabase"
 import { Property, CreatePropertyInput } from "@/types/property"
 
-type CreatePropertyInput = Omit<Property, 'id'> & {
-  owner_id: string
-}
-
-export async function createProperty(data: CreatePropertyInput): Promise<Property> {
+export async function createProperty(input: CreatePropertyInput): Promise<Property> {
   const { data: property, error } = await supabase
     .from('properties')
-    .insert([data])
+    .insert([input])
     .select()
     .single()
 
