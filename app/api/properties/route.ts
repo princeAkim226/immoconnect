@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { supabase } from '@/lib/supabase-client'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { properties } from '@/lib/data'
+import { Property } from '@/types/property'
 
 // Fonction pour calculer la distance entre deux points
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -28,28 +27,34 @@ export async function GET(request: Request) {
   const longitude = searchParams.get('longitude')
   const radius = searchParams.get('radius') // rayon en km
 
-  let query = supabase.from('properties').select('*')
+  let filteredProperties = [...properties]
 
-  if (type && type !== 'all') query = query.eq('type', type)
-  if (city && city !== 'all') query = query.eq('city', city)
-  if (minPrice) query = query.gte('price', minPrice)
-  if (maxPrice) query = query.lte('price', maxPrice)
-  if (minSurface) query = query.gte('surface', minSurface)
-  if (maxSurface) query = query.lte('surface', maxSurface)
-
-  const { data, error } = await query.order('created_at', { ascending: false })
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (type) {
+    filteredProperties = filteredProperties.filter(p => p.type === type)
+  }
+  if (city) {
+    filteredProperties = filteredProperties.filter(p => p.city.toLowerCase().includes(city.toLowerCase()))
+  }
+  if (minPrice) {
+    filteredProperties = filteredProperties.filter(p => p.price >= Number(minPrice))
+  }
+  if (maxPrice) {
+    filteredProperties = filteredProperties.filter(p => p.price <= Number(maxPrice))
+  }
+  if (minSurface) {
+    filteredProperties = filteredProperties.filter(p => p.surface >= Number(minSurface))
+  }
+  if (maxSurface) {
+    filteredProperties = filteredProperties.filter(p => p.surface <= Number(maxSurface))
   }
 
   // Filtrer par distance si les coordonnées sont fournies
-  if (latitude && longitude && radius && data) {
+  if (latitude && longitude && radius && filteredProperties) {
     const lat = parseFloat(latitude)
     const lng = parseFloat(longitude)
     const rad = parseFloat(radius)
 
-    const filteredData = data.filter(property => {
+    const filteredData = filteredProperties.filter(property => {
       if (!property.latitude || !property.longitude) return false
       
       const distance = calculateDistance(
@@ -79,30 +84,20 @@ export async function GET(request: Request) {
     return NextResponse.json(propertiesWithDistance)
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json(filteredProperties)
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  const data = await request.json()
+  const newProperty: Property = {
+    ...data,
+    id: String(properties.length + 1),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    owner_id: 'user1',
+    status: 'published'
   }
 
-  try {
-    const data = await request.json()
-    const { data: property, error } = await supabase
-      .from('properties')
-      .insert([{ ...data, owner_id: session.user.id }])
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json(property)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  properties.push(newProperty)
+  return NextResponse.json(newProperty)
 }

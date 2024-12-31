@@ -12,7 +12,6 @@
     "build-netlify": "npm install --legacy-peer-deps bufferutil utf-8-validate && next build"
   },
   "dependencies": {
-    "@auth/supabase-adapter": "^1.7.4",
     "@hookform/resolvers": "^3.3.4",
     "@next/swc-wasm-nodejs": "13.5.1",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -43,8 +42,6 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@react-leaflet/core": "^2.1.0",
-    "@supabase/auth-helpers-nextjs": "^0.9.0",
-    "@supabase/supabase-js": "^2.47.10",
     "@tanstack/react-query": "^5.62.11",
     "@types/bcryptjs": "^2.4.6",
     "@types/leaflet": "^1.9.15",

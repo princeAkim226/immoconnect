@@ -1,0 +1,50 @@
+import { Property } from '@/types/property'
+
+export const properties: Property[] = [
+  {
+    id: '1',
+    title: 'Belle maison avec jardin',
+    description: 'Magnifique maison avec un grand jardin',
+    type: 'house',
+    price: 250000,
+    surface: 150,
+    rooms: 5,
+    bedrooms: 3,
+    bathrooms: 2,
+    address: '123 rue des Fleurs',
+    city: 'Paris',
+    district: '15ème',
+    postalCode: '75015',
+    images: ['/images/house1.jpg'],
+    features: ['jardin', 'garage', 'cave'],
+    owner_id: 'user1',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    status: 'published',
+    latitude: 48.8566,
+    longitude: 2.3522
+  },
+  {
+    id: '2',
+    title: 'Appartement moderne',
+    description: 'Bel appartement rénové',
+    type: 'apartment',
+    price: 180000,
+    surface: 75,
+    rooms: 3,
+    bedrooms: 2,
+    bathrooms: 1,
+    address: '45 avenue Victor Hugo',
+    city: 'Lyon',
+    district: '6ème',
+    postalCode: '69006',
+    images: ['/images/apartment1.jpg'],
+    features: ['balcon', 'ascenseur', 'parking'],
+    owner_id: 'user2',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    status: 'published',
+    latitude: 45.7640,
+    longitude: 4.8357
+  }
+]
