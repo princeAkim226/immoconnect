@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { createServerSupabase } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase-client'
 import { authOptions } from '../auth/[...nextauth]/route'
 
 // Fonction pour calculer la distance entre deux points
@@ -17,7 +17,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export async function GET(request: Request) {
-  const supabase = createServerSupabase()
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
   const city = searchParams.get('city')
@@ -84,38 +83,26 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = createServerSupabase()
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    return NextResponse.json(
-      { error: 'Non autorisé' },
-      { status: 401 }
-    )
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
   try {
-    const json = await request.json()
-    const property = {
-      ...json,
-      user_id: session.user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    const { data, error } = await supabase
+    const data = await request.json()
+    const { data: property, error } = await supabase
       .from('properties')
-      .insert([property])
+      .insert([{ ...data, owner_id: session.user.id }])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
-    return NextResponse.json(data)
+    return NextResponse.json(property)
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

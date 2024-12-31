@@ -1,10 +1,8 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Property, CreatePropertyInput, PropertyFormData } from '@/types/property'
-import { Database } from '@/lib/supabase/types'
+import { supabase } from '@/lib/supabase-client'
 
 export function useProperties() {
-  const supabase = createClientComponentClient<Database>()
   const queryClient = useQueryClient()
 
   const createPropertyMutation = useMutation({
@@ -30,13 +28,13 @@ export function useProperties() {
         longitude: formData.longitude || null
       }
 
-      const { data, error: err } = await supabase
+      const { data, error } = await supabase
         .from('properties')
-        .insert(propertyData)
+        .insert([propertyData])
         .select()
         .single()
 
-      if (err) throw err
+      if (error) throw error
 
       // Upload des images si présentes
       if (formData.images) {
