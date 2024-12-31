@@ -3,13 +3,14 @@ import { properties } from '@/lib/data'
 import { Property } from '@/types/property'
 
 // Fonction pour calculer la distance entre deux points
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+function calculateDistance(lat1: number, lon1: number, lat2: number | null | undefined, lon2: number | null | undefined): number {
+  if (lat2 === null || lat2 === undefined || lon2 === null || lon2 === undefined) return Infinity
+
   const R = 6371 // Rayon de la Terre en km
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   return R * c
@@ -49,37 +50,18 @@ export async function GET(request: Request) {
   }
 
   // Filtrer par distance si les coordonnées sont fournies
-  if (latitude && longitude && radius && filteredProperties) {
+  if (latitude && longitude && radius) {
     const lat = parseFloat(latitude)
     const lng = parseFloat(longitude)
     const rad = parseFloat(radius)
 
-    const filteredData = filteredProperties.filter(property => {
-      if (!property.latitude || !property.longitude) return false
-      
-      const distance = calculateDistance(
-        lat,
-        lng,
-        property.latitude,
-        property.longitude
-      )
-      
-      return distance <= rad
-    })
-
-    // Ajouter la distance à chaque propriété
-    const propertiesWithDistance = filteredData.map(property => ({
-      ...property,
-      distance: calculateDistance(
-        lat,
-        lng,
-        property.latitude,
-        property.longitude
-      )
-    }))
-
-    // Trier par distance
-    propertiesWithDistance.sort((a, b) => a.distance - b.distance)
+    const propertiesWithDistance = filteredProperties
+      .map(property => ({
+        ...property,
+        distance: calculateDistance(lat, lng, property.latitude, property.longitude)
+      }))
+      .filter(property => property.distance <= rad)
+      .sort((a, b) => a.distance - b.distance)
 
     return NextResponse.json(propertiesWithDistance)
   }

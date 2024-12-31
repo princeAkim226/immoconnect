@@ -1,32 +1,39 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import dynamic from 'next/dynamic'
 import { Property } from '@/types/property'
 import { Button } from '@/components/ui/button'
 import { Locate } from 'lucide-react'
 import { useGeolocation } from '@/hooks/use-geolocation'
 import { useToast } from '@/components/ui/use-toast'
+import { useMap as useLeafletMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 
-// Correction des icônes Leaflet pour Next.js
-const icon = L.icon({
-  iconUrl: '/images/marker-icon.png',
-  iconRetinaUrl: '/images/marker-icon-2x.png',
-  shadowUrl: '/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-})
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+)
 
-const userIcon = L.icon({
-  iconUrl: '/images/user-marker.png',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32]
-})
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+)
+
+const Marker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+)
+
+const Popup = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Popup),
+  { ssr: false }
+)
+
+const Circle = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Circle),
+  { ssr: false }
+)
 
 interface PropertyMapProps {
   properties: Property[]
@@ -36,35 +43,34 @@ interface PropertyMapProps {
 }
 
 function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap()
-  
+  const map = useLeafletMap()
+
   useEffect(() => {
-    map.setView(center, zoom)
+    if (map) {
+      map.setView(center, zoom)
+    }
   }, [center, zoom, map])
-  
+
   return null
 }
 
 function LocationButton() {
-  const map = useMap()
-  const { latitude, longitude, error, isLoading } = useGeolocation()
   const { toast } = useToast()
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const { getLocation } = useGeolocation()
+  const map = useLeafletMap()
 
-  const handleLocationClick = () => {
-    if (error) {
+  const handleClick = async () => {
+    try {
+      const { latitude, longitude } = await getLocation()
+      if (map) {
+        map.setView([latitude, longitude], 13)
+      }
+    } catch (error) {
       toast({
-        title: "Erreur de géolocalisation",
-        description: error,
-        variant: "destructive"
+        title: "Erreur de localisation",
+        description: "Impossible d'obtenir votre position actuelle.",
+        variant: "destructive",
       })
-      return
-    }
-
-    if (latitude && longitude) {
-      const location: [number, number] = [latitude, longitude]
-      setUserLocation(location)
-      map.flyTo(location, 15)
     }
   }
 
@@ -72,11 +78,10 @@ function LocationButton() {
     <div className="leaflet-bottom leaflet-right">
       <div className="leaflet-control leaflet-bar">
         <Button
-          size="icon"
           variant="outline"
-          className="bg-background h-10 w-10"
-          onClick={handleLocationClick}
-          disabled={isLoading}
+          size="icon"
+          className="bg-white hover:bg-gray-100"
+          onClick={handleClick}
         >
           <Locate className="h-4 w-4" />
         </Button>
@@ -85,44 +90,65 @@ function LocationButton() {
   )
 }
 
-export function PropertyMap({ 
+const defaultIcon = {
+  iconUrl: '/images/marker-icon.png',
+  iconRetinaUrl: '/images/marker-icon-2x.png',
+  shadowUrl: '/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+}
+
+export function PropertyMap({
   properties,
   center = [12.3714, -1.5197], // Coordonnées de Ouagadougou
   zoom = 13,
   onLocationChange
 }: PropertyMapProps) {
+  const [isClient, setIsClient] = useState(false)
+  const [L, setL] = useState<any>(null)
+
+  useEffect(() => {
+    setIsClient(true)
+    import('leaflet').then((mod) => {
+      setL(mod.default)
+    })
+  }, [])
+
+  if (!isClient || !L) {
+    return <div className="h-[600px] bg-gray-100" />
+  }
+
   return (
-    <div className="h-[600px] w-full rounded-lg overflow-hidden border">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        className="h-full w-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <MapUpdater center={center} zoom={zoom} />
-        <LocationButton />
-        
-        {properties.map((property) => (
-          property.latitude && property.longitude ? (
-            <Marker
-              key={property.id}
-              position={[property.latitude, property.longitude]}
-              icon={icon}
-            >
-              <Popup>
-                <div className="p-2">
-                  <h3 className="font-semibold">{property.title}</h3>
-                  <p className="text-sm text-muted-foreground">{property.price.toLocaleString()} FCFA</p>
-                  <p className="text-sm text-muted-foreground">{property.surface} m²</p>
-                </div>
-              </Popup>
-            </Marker>
-          ) : null
-        ))}
-      </MapContainer>
-    </div>
+    <MapContainer
+      center={center}
+      zoom={zoom}
+      className="h-[600px] w-full"
+      zoomControl={true}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <MapUpdater center={center} zoom={zoom} />
+      <LocationButton />
+      {properties.map((property) => (
+        property.latitude && property.longitude ? (
+          <Marker
+            key={property.id}
+            position={[property.latitude, property.longitude]}
+            icon={L.icon(defaultIcon)}
+          >
+            <Popup>
+              <div className="p-2">
+                <h3 className="font-semibold">{property.title}</h3>
+                <p className="text-sm text-gray-600">{property.price} FCFA</p>
+              </div>
+            </Popup>
+          </Marker>
+        ) : null
+      ))}
+    </MapContainer>
   )
 }

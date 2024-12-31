@@ -9,6 +9,11 @@ interface GeolocationState {
   isLoading: boolean
 }
 
+interface GeolocationResult {
+  latitude: number
+  longitude: number
+}
+
 export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
     latitude: null,
@@ -17,34 +22,45 @@ export function useGeolocation() {
     isLoading: true,
   })
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setState(prev => ({
-        ...prev,
-        error: "La géolocalisation n'est pas supportée par votre navigateur",
-        isLoading: false,
-      }))
-      return
-    }
+  const getLocation = (): Promise<GeolocationResult> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("La géolocalisation n'est pas supportée par votre navigateur"))
+        return
+      }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+        },
+        (error) => {
+          reject(new Error(error.message))
+        }
+      )
+    })
+  }
+
+  useEffect(() => {
+    getLocation()
+      .then(({ latitude, longitude }) => {
         setState({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          latitude,
+          longitude,
           error: null,
           isLoading: false,
         })
-      },
-      (error) => {
+      })
+      .catch((error) => {
         setState(prev => ({
           ...prev,
           error: error.message,
           isLoading: false,
         }))
-      }
-    )
+      })
   }, [])
 
-  return state
+  return { ...state, getLocation }
 }

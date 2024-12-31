@@ -1,61 +1,58 @@
-import { supabase } from "@/lib/supabase"
 import { Property, CreatePropertyInput } from "@/types/property"
 
 export async function createProperty(input: CreatePropertyInput): Promise<Property> {
-  const { data: property, error } = await supabase
-    .from('properties')
-    .insert([input])
-    .select()
-    .single()
+  const response = await fetch('/api/properties', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
 
-  if (error) {
-    throw new Error(`Erreur lors de la création de la propriété: ${error.message}`)
+  if (!response.ok) {
+    throw new Error('Failed to create property')
   }
 
-  return property
+  return response.json()
 }
 
 export async function updateProperty(
   id: string,
   data: Partial<CreatePropertyInput>
 ): Promise<Property> {
-  const { data: property, error } = await supabase
-    .from('properties')
-    .update(data)
-    .eq('id', id)
-    .select()
-    .single()
+  const response = await fetch(`/api/properties/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
 
-  if (error) {
-    throw new Error(`Erreur lors de la mise à jour de la propriété: ${error.message}`)
+  if (!response.ok) {
+    throw new Error('Failed to update property')
   }
 
-  return property
+  return response.json()
 }
 
 export async function deleteProperty(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('properties')
-    .delete()
-    .eq('id', id)
+  const response = await fetch(`/api/properties/${id}`, {
+    method: 'DELETE',
+  })
 
-  if (error) {
-    throw new Error(`Erreur lors de la suppression de la propriété: ${error.message}`)
+  if (!response.ok) {
+    throw new Error('Failed to delete property')
   }
 }
 
 export async function getProperty(id: string): Promise<Property> {
-  const { data: property, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    throw new Error(`Erreur lors de la récupération de la propriété: ${error.message}`)
+  const response = await fetch(`/api/properties/${id}`)
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch property')
   }
 
-  return property
+  return response.json()
 }
 
 export async function getProperties(filters?: {
@@ -67,37 +64,39 @@ export async function getProperties(filters?: {
   maxSurface?: number
   status?: Property['status']
 }): Promise<Property[]> {
-  let query = supabase.from('properties').select('*')
+  let query = '/api/properties'
 
   if (filters) {
+    const params = new URLSearchParams()
     if (filters.type) {
-      query = query.eq('type', filters.type)
+      params.set('type', filters.type)
     }
     if (filters.city) {
-      query = query.eq('city', filters.city)
+      params.set('city', filters.city)
     }
     if (filters.minPrice) {
-      query = query.gte('price', filters.minPrice)
+      params.set('minPrice', String(filters.minPrice))
     }
     if (filters.maxPrice) {
-      query = query.lte('price', filters.maxPrice)
+      params.set('maxPrice', String(filters.maxPrice))
     }
     if (filters.minSurface) {
-      query = query.gte('surface', filters.minSurface)
+      params.set('minSurface', String(filters.minSurface))
     }
     if (filters.maxSurface) {
-      query = query.lte('surface', filters.maxSurface)
+      params.set('maxSurface', String(filters.maxSurface))
     }
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      params.set('status', filters.status)
     }
+    query += `?${params.toString()}`
   }
 
-  const { data: properties, error } = await query
-
-  if (error) {
-    throw new Error(`Erreur lors de la récupération des propriétés: ${error.message}`)
+  const response = await fetch(query)
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch properties')
   }
 
-  return properties
+  return response.json()
 }

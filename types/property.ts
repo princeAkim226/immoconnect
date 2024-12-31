@@ -1,5 +1,3 @@
-import { PropertyType as SupabasePropertyType } from '@/lib/supabase/types'
-
 export type PropertyType = 'apartment' | 'house' | 'studio' | 'villa' | 'office' | 'land'
 
 export type PropertyStatus = 'draft' | 'published' | 'archived'
@@ -7,31 +5,31 @@ export type PropertyStatus = 'draft' | 'published' | 'archived'
 export interface Property {
   id: string
   title: string
-  description: string | null
+  description: string
   type: PropertyType
   price: number
   surface: number
-  rooms: number | null
-  bedrooms: number | null
-  bathrooms: number | null
-  address: string | null
+  rooms?: number | null
+  bedrooms?: number | null
+  bathrooms?: number | null
+  address?: string | null
   city: string
-  district: string | null
-  postalCode: string | null
-  images: string[]
+  district?: string | null
+  postalCode?: string | null
+  latitude?: number | null
+  longitude?: number | null
   features: string[]
+  images: string[]
   owner_id: string
   created_at: string
   updated_at: string
   status: PropertyStatus
-  latitude: number | null
-  longitude: number | null
 }
 
-export type CreatePropertyInput = Omit<Property, 'id' | 'created_at' | 'updated_at' | 'images' | 'features'> & {
-  images?: string[]
-  features?: string[]
-}
+export type CreatePropertyInput = Omit<
+  Property,
+  'id' | 'created_at' | 'updated_at' | 'owner_id'
+>
 
 export interface PropertyFormData {
   title: string
@@ -44,7 +42,7 @@ export interface PropertyFormData {
   city: string
   district?: string
   features?: string[]
-  images?: FileList
+  images?: File[] | null
   latitude?: number
   longitude?: number
 }

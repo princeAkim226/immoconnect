@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import { SearchFilters } from "@/components/properties/search-filters"
 import { PropertyCard } from "@/components/properties/property-card"
@@ -14,6 +15,15 @@ import {
 } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Grid2X2, Map } from "lucide-react"
+
+const PropertyMapDynamic = dynamic(
+  () => import('@/components/properties/property-map').then(mod => mod.PropertyMap),
+  { ssr: false }
+)
+const PropertyCardDynamic = dynamic(
+  () => import('@/components/properties/property-card').then(mod => mod.PropertyCard),
+  { ssr: false }
+)
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([])
@@ -64,7 +74,7 @@ export default function PropertiesPage() {
           {view === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCardDynamic key={property.id} property={property} />
               ))}
               {properties.length === 0 && !isLoading && (
                 <div className="col-span-full text-center py-12">
@@ -75,7 +85,7 @@ export default function PropertiesPage() {
               )}
             </div>
           ) : (
-            <PropertyMap properties={properties} />
+            <PropertyMapDynamic properties={properties} />
           )}
         </div>
       </div>

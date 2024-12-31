@@ -42,7 +42,7 @@ const formSchema = z.object({
   bedrooms: z.number().optional(),
   bathrooms: z.number().optional(),
   features: z.array(z.string()).default([]),
-  images: z.instanceof(FileList).optional()
+  images: z.any().optional()
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -51,6 +51,7 @@ export function PostPropertyForm() {
   const { createProperty } = useProperties()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,13 +64,18 @@ export function PostPropertyForm() {
       price: 50000,
       surface: 0,
       features: [],
+      images: undefined
     }
   })
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
     try {
-      await createProperty(values as PropertyFormData)
+      const formData = {
+        ...values,
+        images: selectedFiles
+      }
+      await createProperty(formData as PropertyFormData)
 
       toast({
         title: "Propriété publiée",
@@ -77,6 +83,7 @@ export function PostPropertyForm() {
       })
 
       form.reset()
+      setSelectedFiles([])
     } catch (error) {
       console.error(error)
       toast({
@@ -251,7 +258,7 @@ export function PostPropertyForm() {
         <FormField
           control={form.control}
           name="images"
-          render={({ field }) => (
+          render={({ field: { onChange, ...field } }) => (
             <FormItem>
               <FormLabel>Photos du bien</FormLabel>
               <FormControl>
@@ -260,11 +267,11 @@ export function PostPropertyForm() {
                   accept="image/*"
                   multiple
                   onChange={(e) => {
-                    const files = e.target.files
-                    if (files?.length) {
-                      field.onChange(files)
-                    }
+                    const files = Array.from(e.target.files || [])
+                    setSelectedFiles(files)
+                    onChange(files)
                   }}
+                  {...field}
                 />
               </FormControl>
               <FormDescription>

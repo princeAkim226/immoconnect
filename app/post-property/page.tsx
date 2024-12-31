@@ -1,4 +1,11 @@
-import { PostPropertyForm } from "@/components/properties/post-property-form"
+'use client'
+
+import dynamic from 'next/dynamic'
+
+const PostPropertyForm = dynamic(
+  () => import('@/components/properties/post-property-form').then(mod => mod.PostPropertyForm),
+  { ssr: false }
+)
 
 export default function PostPropertyPage() {
   return (
