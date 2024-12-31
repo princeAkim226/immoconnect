@@ -25,11 +25,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cities, propertyTypes, amenities } from "@/lib/constants/locations"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { PropertyType } from "@/types/property"
+import { createProperty } from "@/lib/actions/properties"
 
 const formSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   description: z.string().min(1, "La description est requise"),
-  type: z.string().min(1, "Le type de bien est requis"),
+  type: z.enum(["apartment", "house", "studio", "villa", "office", "land"] as const),
   city: z.string().min(1, "La ville est requise"),
   district: z.string().optional(),
   price: z.number().min(0, "Le prix doit être positif"),
@@ -48,7 +50,7 @@ export function PostPropertyForm() {
     defaultValues: {
       title: "",
       description: "",
-      type: "",
+      type: "apartment",
       city: "",
       district: "",
       price: 0,
@@ -58,11 +60,15 @@ export function PostPropertyForm() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function onSubmit(data: FormValues) {
+  async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
     try {
-      // TODO: Implémenter la soumission du formulaire
-      console.log(data)
+      const property = await createProperty({
+        ...values,
+        owner_id: 'user_id', // À remplacer par l'ID de l'utilisateur connecté
+        status: 'published' as const,
+      })
+      console.log(property)
     } catch (error) {
       console.error(error)
     } finally {

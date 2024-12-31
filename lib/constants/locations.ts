@@ -1,3 +1,14 @@
+import { PropertyType } from "@/types/property"
+
+export const propertyTypes = [
+  { value: "apartment" as PropertyType, label: "Appartement" },
+  { value: "house" as PropertyType, label: "Maison" },
+  { value: "studio" as PropertyType, label: "Studio" },
+  { value: "villa" as PropertyType, label: "Villa" },
+  { value: "office" as PropertyType, label: "Bureau" },
+  { value: "land" as PropertyType, label: "Terrain" },
+] as const
+
 export const cities = [
   "Ouagadougou",
   "Bobo-Dioulasso",
@@ -38,49 +49,13 @@ export const districts = {
   ]
 } as const
 
-export const propertyTypes = [
-  {
-    label: "Villa",
-    value: "villa",
-    description: "Maison individuelle avec cour"
-  },
-  {
-    label: "Appartement",
-    value: "apartment",
-    description: "Appartement dans un immeuble"
-  },
-  {
-    label: "Chambre-salon",
-    value: "studio",
-    description: "Studio avec une chambre et un salon"
-  },
-  {
-    label: "Célibatorium",
-    value: "single_room",
-    description: "Chambre simple"
-  },
-  {
-    label: "Bureau",
-    value: "office",
-    description: "Espace de travail"
-  },
-  {
-    label: "Boutique",
-    value: "shop",
-    description: "Local commercial"
-  },
-  {
-    label: "Entrepôt",
-    value: "warehouse",
-    description: "Espace de stockage"
-  }
-] as const
-
 export const amenities = [
-  {
-    label: "Climatisation",
-    value: "ac"
-  },
+  { value: "parking", label: "Parking" },
+  { value: "garden", label: "Jardin" },
+  { value: "pool", label: "Piscine" },
+  { value: "security", label: "Sécurité" },
+  { value: "air_conditioning", label: "Climatisation" },
+  { value: "furnished", label: "Meublé" },
   {
     label: "Garage",
     value: "garage"
@@ -97,8 +72,4 @@ export const amenities = [
     label: "Cuisine moderne",
     value: "modern_kitchen"
   },
-  {
-    label: "Gardiennage",
-    value: "security"
-  }
 ] as const
