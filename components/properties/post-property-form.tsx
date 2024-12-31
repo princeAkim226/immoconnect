@@ -213,8 +213,12 @@ export function PostPropertyForm() {
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => onChange(e.target.files)}
-                  {...field}
+                  onChange={(e) => {
+                    const files = e.target.files
+                    if (files) {
+                      field.onChange(files)
+                    }
+                  }}
                 />
               </FormControl>
               <FormDescription>
