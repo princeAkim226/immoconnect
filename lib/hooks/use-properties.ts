@@ -1,116 +1,75 @@
-"use client"
-
-import { useState } from 'react'
-import { Database } from '@/lib/supabase/types'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-
-type Property = Database['public']['Tables']['properties']['Row']
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Property, CreatePropertyInput, PropertyFormData } from '@/types/property'
+import { Database } from '@/lib/supabase/types'
 
 export function useProperties() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const supabase = createClientComponentClient<Database>()
+  const queryClient = useQueryClient()
 
-  const fetchProperties = async (filters?: {
-    city?: string
-    type?: string
-    minPrice?: number
-    maxPrice?: number
-    amenities?: string[]
-  }) => {
-    setIsLoading(true)
-    setError(null)
-    
-    try {
-      let query = supabase
-        .from('properties')
-        .select(`
-          *,
-          property_images (*),
-          property_amenities (*)
-        `)
-        .eq('status', 'available')
-        .order('created_at', { ascending: false })
-
-      if (filters?.city) {
-        query = query.eq('city', filters.city)
-      }
-      if (filters?.type) {
-        query = query.eq('type', filters.type)
-      }
-      if (filters?.minPrice) {
-        query = query.gte('price', filters.minPrice)
-      }
-      if (filters?.maxPrice) {
-        query = query.lte('price', filters.maxPrice)
-      }
-      if (filters?.amenities?.length) {
-        query = query.contains('amenities', filters.amenities)
+  const createPropertyMutation = useMutation({
+    mutationFn: async (formData: PropertyFormData) => {
+      const propertyData: CreatePropertyInput = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        price: formData.price,
+        surface: formData.surface,
+        rooms: formData.bedrooms || null,
+        bedrooms: formData.bedrooms || null,
+        bathrooms: formData.bathrooms || null,
+        address: formData.district || null,
+        city: formData.city,
+        district: formData.district || null,
+        postalCode: null,
+        owner_id: 'user_id', // À remplacer par l'ID de l'utilisateur connecté
+        status: 'published',
+        features: formData.features || [],
+        images: []
       }
 
-      const { data, error: err } = await query
-
-      if (err) throw err
-      return data
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue')
-      return []
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createProperty = async (property: Database['public']['Tables']['properties']['Insert']) => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
       const { data, error: err } = await supabase
         .from('properties')
-        .insert(property)
+        .insert(propertyData)
         .select()
         .single()
 
       if (err) throw err
+
+      // Upload des images si présentes
+      if (formData.images) {
+        const files = Array.from(formData.images)
+        const imageUrls = await Promise.all(
+          files.map(async (file) => {
+            const path = `properties/${data.id}/${file.name}`
+            const { error: uploadError } = await supabase.storage
+              .from('properties')
+              .upload(path, file)
+
+            if (uploadError) throw uploadError
+            return path
+          })
+        )
+
+        // Mise à jour de la propriété avec les URLs des images
+        const { error: updateError } = await supabase
+          .from('properties')
+          .update({ images: imageUrls })
+          .eq('id', data.id)
+
+        if (updateError) throw updateError
+      }
+
       return data
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la création')
-      return null
-    } finally {
-      setIsLoading(false)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] })
     }
-  }
-
-  const updateProperty = async (
-    id: string,
-    updates: Database['public']['Tables']['properties']['Update']
-  ) => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: err } = await supabase
-        .from('properties')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (err) throw err
-      return data
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour')
-      return null
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  })
 
   return {
-    isLoading,
-    error,
-    fetchProperties,
-    createProperty,
-    updateProperty
+    isLoading: createPropertyMutation.isPending,
+    error: createPropertyMutation.error?.message || null,
+    createProperty: createPropertyMutation.mutate
   }
 }

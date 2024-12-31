@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase"
-import { Property, PropertyType } from "@/types/property"
+import { Property, CreatePropertyInput } from "@/types/property"
 
 type CreatePropertyInput = Omit<Property, 'id'> & {
   owner_id: string
@@ -8,13 +8,7 @@ type CreatePropertyInput = Omit<Property, 'id'> & {
 export async function createProperty(data: CreatePropertyInput): Promise<Property> {
   const { data: property, error } = await supabase
     .from('properties')
-    .insert([
-      {
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ])
+    .insert([data])
     .select()
     .single()
 
@@ -31,10 +25,7 @@ export async function updateProperty(
 ): Promise<Property> {
   const { data: property, error } = await supabase
     .from('properties')
-    .update({
-      ...data,
-      updated_at: new Date().toISOString(),
-    })
+    .update(data)
     .eq('id', id)
     .select()
     .single()
@@ -72,12 +63,13 @@ export async function getProperty(id: string): Promise<Property> {
 }
 
 export async function getProperties(filters?: {
-  type?: PropertyType
+  type?: Property['type']
   city?: string
   minPrice?: number
   maxPrice?: number
   minSurface?: number
   maxSurface?: number
+  status?: Property['status']
 }): Promise<Property[]> {
   let query = supabase.from('properties').select('*')
 
@@ -99,6 +91,9 @@ export async function getProperties(filters?: {
     }
     if (filters.maxSurface) {
       query = query.lte('surface', filters.maxSurface)
+    }
+    if (filters.status) {
+      query = query.eq('status', filters.status)
     }
   }
 

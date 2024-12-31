@@ -6,7 +6,9 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export type PropertyType = 'apartment' | 'house' | 'studio' | 'villa' | 'office' | 'land'
+
+export interface Database {
   public: {
     Tables: {
       properties: {
@@ -21,10 +23,15 @@ export type Database = {
           surface: number
           bedrooms: number | null
           bathrooms: number | null
+          rooms: number | null
+          address: string | null
+          postalCode: string | null
+          images: string[] | null
+          features: string[] | null
           created_at: string
           updated_at: string
           owner_id: string
-          status: 'available' | 'rented' | 'archived'
+          status: 'draft' | 'published' | 'archived'
         }
         Insert: {
           id?: string
@@ -37,10 +44,15 @@ export type Database = {
           surface: number
           bedrooms?: number | null
           bathrooms?: number | null
+          rooms?: number | null
+          address?: string | null
+          postalCode?: string | null
+          images?: string[] | null
+          features?: string[] | null
           created_at?: string
           updated_at?: string
           owner_id: string
-          status?: 'available' | 'rented' | 'archived'
+          status?: 'draft' | 'published' | 'archived'
         }
         Update: {
           id?: string
@@ -53,61 +65,55 @@ export type Database = {
           surface?: number
           bedrooms?: number | null
           bathrooms?: number | null
+          rooms?: number | null
+          address?: string | null
+          postalCode?: string | null
+          images?: string[] | null
+          features?: string[] | null
           created_at?: string
           updated_at?: string
           owner_id?: string
-          status?: 'available' | 'rented' | 'archived'
+          status?: 'draft' | 'published' | 'archived'
         }
       }
-      property_images: {
+      messages: {
         Row: {
           id: string
+          content: string
+          sender_id: string
+          receiver_id: string
           property_id: string
-          url: string
           created_at: string
-          order: number
+          read: boolean
         }
         Insert: {
           id?: string
+          content: string
+          sender_id: string
+          receiver_id: string
           property_id: string
-          url: string
           created_at?: string
-          order?: number
+          read?: boolean
         }
         Update: {
           id?: string
+          content?: string
+          sender_id?: string
+          receiver_id?: string
           property_id?: string
-          url?: string
           created_at?: string
-          order?: number
-        }
-      }
-      property_amenities: {
-        Row: {
-          property_id: string
-          amenity: string
-        }
-        Insert: {
-          property_id: string
-          amenity: string
-        }
-        Update: {
-          property_id?: string
-          amenity?: string
+          read?: boolean
         }
       }
     }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
     Enums: {
-      property_type: PropertyType
+      [_ in never]: never
     }
   }
 }
-
-export type PropertyType = 
-  | 'villa'
-  | 'apartment'
-  | 'studio'
-  | 'single_room'
-  | 'office'
-  | 'shop'
-  | 'warehouse'

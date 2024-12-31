@@ -24,53 +24,49 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useProperties } from '@/lib/hooks/use-properties'
-import { usePropertyImages } from '@/lib/hooks/use-property-images'
 import { cities, propertyTypes } from '@/lib/constants/locations'
 import { useToast } from '@/components/ui/use-toast'
+import { PropertyType, PropertyFormData } from '@/types/property'
+
+const propertyTypeEnum = z.enum(['apartment', 'house', 'studio', 'villa', 'office', 'land'])
 
 const formSchema = z.object({
   title: z.string().min(5, 'Le titre doit faire au moins 5 caractères'),
   description: z.string().min(20, 'La description doit faire au moins 20 caractères'),
-  type: z.string(),
+  type: propertyTypeEnum,
   city: z.string(),
   district: z.string().optional(),
   price: z.number().min(10000, 'Le prix minimum est de 10,000 FCFA'),
   surface: z.number().min(1, 'La surface doit être supérieure à 0'),
   bedrooms: z.number().optional(),
   bathrooms: z.number().optional(),
-  images: z.any()
+  images: z.instanceof(FileList).optional()
 })
+
+type FormValues = z.infer<typeof formSchema>
 
 export function PropertyForm() {
   const { createProperty } = useProperties()
-  const { uploadImage } = usePropertyImages()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
       description: '',
+      type: 'apartment' as PropertyType,
+      city: '',
+      district: '',
       price: 50000,
-      surface: 0
+      surface: 0,
     }
   })
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true)
     try {
-      const property = await createProperty({
-        ...values,
-        owner_id: 'user_id', // À remplacer par l'ID de l'utilisateur connecté
-      })
-
-      if (property && values.images) {
-        const files = Array.from(values.images as FileList)
-        await Promise.all(
-          files.map(file => uploadImage(property.id, file))
-        )
-      }
+      await createProperty(values as PropertyFormData)
 
       toast({
         title: 'Propriété publiée',
@@ -184,7 +180,7 @@ export function PropertyForm() {
               <FormItem>
                 <FormLabel>Prix mensuel (FCFA)</FormLabel>
                 <FormControl>
-                  <Input type="number" min={10000} step={5000} {...field} />
+                  <Input type="number" min={10000} step={5000} {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -198,7 +194,7 @@ export function PropertyForm() {
               <FormItem>
                 <FormLabel>Surface (m²)</FormLabel>
                 <FormControl>
-                  <Input type="number" min={1} {...field} />
+                  <Input type="number" min={1} {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

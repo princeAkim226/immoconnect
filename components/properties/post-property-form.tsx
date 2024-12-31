@@ -25,28 +25,33 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cities, propertyTypes, amenities } from "@/lib/constants/locations"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { PropertyType } from "@/types/property"
-import { createProperty } from "@/lib/actions/properties"
+import { PropertyType, PropertyFormData } from "@/types/property"
+import { useProperties } from "@/lib/hooks/use-properties"
+import { useToast } from "@/components/ui/use-toast"
 
 const propertyTypeEnum = z.enum(['apartment', 'house', 'studio', 'villa', 'office', 'land'])
 
 const formSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  description: z.string().min(1, "La description est requise"),
+  title: z.string().min(5, "Le titre doit faire au moins 5 caractères"),
+  description: z.string().min(20, "La description doit faire au moins 20 caractères"),
   type: propertyTypeEnum,
   city: z.string().min(1, "La ville est requise"),
   district: z.string().optional(),
-  price: z.number().min(0, "Le prix doit être positif"),
-  surface: z.number().min(0, "La surface doit être positive"),
+  price: z.number().min(10000, "Le prix minimum est de 10,000 FCFA"),
+  surface: z.number().min(1, "La surface doit être positive"),
   bedrooms: z.number().optional(),
   bathrooms: z.number().optional(),
-  amenities: z.array(z.string()).default([]),
-  images: z.any()
+  features: z.array(z.string()).default([]),
+  images: z.instanceof(FileList).optional()
 })
 
 type FormValues = z.infer<typeof formSchema>
 
 export function PostPropertyForm() {
+  const { createProperty } = useProperties()
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,41 +60,30 @@ export function PostPropertyForm() {
       type: "apartment" as PropertyType,
       city: "",
       district: "",
-      price: 0,
+      price: 50000,
       surface: 0,
-      amenities: [],
+      features: [],
     }
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
     try {
-      const propertyData = {
-        title: values.title,
-        description: values.description,
-        type: values.type as PropertyType,
-        price: values.price,
-        surface: values.surface,
-        rooms: values.bedrooms || 0,
-        bedrooms: values.bedrooms || 0,
-        bathrooms: values.bathrooms || 0,
-        address: values.district || '',
-        city: values.city,
-        postalCode: '',
-        images: [],
-        features: values.amenities,
-        userId: 'user_id',
-        owner_id: 'user_id',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        status: 'published' as const
-      }
-      
-      const property = await createProperty(propertyData)
-      console.log(property)
+      await createProperty(values as PropertyFormData)
+
+      toast({
+        title: "Propriété publiée",
+        description: "Votre annonce a été publiée avec succès",
+      })
+
+      form.reset()
     } catch (error) {
       console.error(error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la publication",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -188,7 +182,13 @@ export function PostPropertyForm() {
               <FormItem>
                 <FormLabel>Prix mensuel (FCFA)</FormLabel>
                 <FormControl>
-                  <Input type="number" min={0} step={5000} {...field} />
+                  <Input 
+                    type="number" 
+                    min={10000} 
+                    step={5000} 
+                    {...field}
+                    onChange={e => field.onChange(e.target.valueAsNumber)} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -202,7 +202,12 @@ export function PostPropertyForm() {
               <FormItem>
                 <FormLabel>Surface (m²)</FormLabel>
                 <FormControl>
-                  <Input type="number" min={0} {...field} />
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    {...field}
+                    onChange={e => field.onChange(e.target.valueAsNumber)} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -217,7 +222,7 @@ export function PostPropertyForm() {
               <FormField
                 key={item.value}
                 control={form.control}
-                name="amenities"
+                name="features"
                 render={({ field }) => (
                   <FormItem className="flex items-center space-x-2">
                     <FormControl>
