@@ -24,6 +24,8 @@ export interface Property {
   created_at: string
   updated_at: string
   status: PropertyStatus
+  latitude: number | null
+  longitude: number | null
 }
 
 export type CreatePropertyInput = Omit<Property, 'id' | 'created_at' | 'updated_at' | 'images' | 'features'> & {
@@ -43,4 +45,6 @@ export interface PropertyFormData {
   district?: string
   features?: string[]
   images?: FileList
+  latitude?: number
+  longitude?: number
 }

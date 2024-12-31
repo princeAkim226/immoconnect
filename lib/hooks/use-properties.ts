@@ -25,7 +25,9 @@ export function useProperties() {
         owner_id: 'user_id', // À remplacer par l'ID de l'utilisateur connecté
         status: 'published',
         features: formData.features || [],
-        images: []
+        images: [],
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null
       }
 
       const { data, error: err } = await supabase
