@@ -3,30 +3,27 @@ import Link from "next/link"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Building2, MapPin, Bed, Bath, Square } from "lucide-react"
+import { Property } from "@/types/property"
 
 interface PropertyCardProps {
-  id: string
-  title: string
-  type: string
-  location: string
-  price: number
-  bedrooms?: number
-  bathrooms?: number
-  surface: number
-  imageUrl: string
+  property: Property
 }
 
-export function PropertyCard({
-  id,
-  title,
-  type,
-  location,
-  price,
-  bedrooms,
-  bathrooms,
-  surface,
-  imageUrl
-}: PropertyCardProps) {
+export function PropertyCard({ property }: PropertyCardProps) {
+  const {
+    id,
+    title,
+    type,
+    city,
+    price,
+    bedrooms,
+    bathrooms,
+    surface,
+    images
+  } = property
+
+  const imageUrl = images && images.length > 0 ? images[0] : '/placeholder.jpg'
+
   return (
     <Link href={`/properties/${id}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -43,7 +40,7 @@ export function PropertyCard({
           <h3 className="font-semibold text-lg mb-2">{title}</h3>
           <div className="flex items-center text-muted-foreground mb-2">
             <MapPin className="h-4 w-4 mr-1" />
-            <span className="text-sm">{location}</span>
+            <span className="text-sm">{city}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             {bedrooms && (
