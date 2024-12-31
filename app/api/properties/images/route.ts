@@ -41,10 +41,19 @@ export async function POST(request: Request) {
       .getPublicUrl(fileName)
 
     // Mettre à jour la propriété avec la nouvelle image
-    const { error: updateError } = await supabase
+    const { data: property } = await supabase
+      .from('properties')
+      .select('images')
+      .eq('id', propertyId)
+      .single()
+
+    const currentImages = property?.images || []
+    const updatedImages = [...currentImages, publicUrl]
+
+    const { data: updatedProperty, error: updateError } = await supabase
       .from('properties')
       .update({
-        images: supabase.sql`array_append(images, ${publicUrl})`
+        images: updatedImages
       })
       .eq('id', propertyId)
 
