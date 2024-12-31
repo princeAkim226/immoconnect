@@ -23,26 +23,42 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cities, propertyTypes, amenities } from "@/lib/constants/locations"
+import * as z from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 
-interface PostPropertyFormValues {
-  title: string
-  description: string
-  type: string
-  city: string
-  district: string
-  price: number
-  surface: number
-  bedrooms?: number
-  bathrooms?: number
-  amenities: string[]
-  images: FileList
-}
+const formSchema = z.object({
+  title: z.string().min(1, "Le titre est requis"),
+  description: z.string().min(1, "La description est requise"),
+  type: z.string().min(1, "Le type de bien est requis"),
+  city: z.string().min(1, "La ville est requise"),
+  district: z.string().optional(),
+  price: z.number().min(0, "Le prix doit être positif"),
+  surface: z.number().min(0, "La surface doit être positive"),
+  bedrooms: z.number().optional(),
+  bathrooms: z.number().optional(),
+  amenities: z.array(z.string()).default([]),
+  images: z.any()
+})
+
+type FormValues = z.infer<typeof formSchema>
 
 export function PostPropertyForm() {
-  const form = useForm<PostPropertyFormValues>()
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      type: "",
+      city: "",
+      district: "",
+      price: 0,
+      surface: 0,
+      amenities: [],
+    }
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function onSubmit(data: PostPropertyFormValues) {
+  async function onSubmit(data: FormValues) {
     setIsSubmitting(true)
     try {
       // TODO: Implémenter la soumission du formulaire
@@ -205,7 +221,7 @@ export function PostPropertyForm() {
         <FormField
           control={form.control}
           name="images"
-          render={({ field: { onChange, ...field } }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Photos du bien</FormLabel>
               <FormControl>
@@ -215,7 +231,7 @@ export function PostPropertyForm() {
                   multiple
                   onChange={(e) => {
                     const files = e.target.files
-                    if (files) {
+                    if (files?.length) {
                       field.onChange(files)
                     }
                   }}
