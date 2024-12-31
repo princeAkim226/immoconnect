@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build-netlify"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_SUPABASE_URL = ""
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
+  NEXTAUTH_URL = ""
+  NEXTAUTH_SECRET = ""
+  NODE_VERSION = "18.20.5"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
