@@ -3,6 +3,19 @@ import NextAuth from 'next-auth/next'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { supabase } from '@/lib/supabase'
+import { JWT } from 'next-auth/jwt'
+import { Session } from 'next-auth'
+
+interface CustomUser {
+  id: string
+  email: string
+  name: string
+  role: string
+}
+
+interface CustomSession extends Session {
+  user: CustomUser
+}
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -48,15 +61,21 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
         token.role = user.role
       }
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token }): Promise<CustomSession> {
       if (session?.user) {
-        session.user.role = token.role
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.role = token.role as string
       }
-      return session
+      return session as CustomSession
     }
   },
   session: {
