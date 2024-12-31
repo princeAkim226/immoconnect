@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { supabase } from '@/lib/supabase'
+import { createServerSupabase } from '@/lib/supabase/server'
 import { authOptions } from '../auth/[...nextauth]/route'
 
 // Fonction pour calculer la distance entre deux points
@@ -17,6 +17,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export async function GET(request: Request) {
+  const supabase = createServerSupabase()
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
   const city = searchParams.get('city')
@@ -83,6 +84,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const supabase = createServerSupabase()
   const session = await getServerSession(authOptions)
 
   if (!session) {
